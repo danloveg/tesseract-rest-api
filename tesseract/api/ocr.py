@@ -4,6 +4,7 @@ import pytesseract
 from PIL import Image
 
 from api.web import download_file
+from api.pdf import convert_to_ppm
 
 TesseractLeptonicaVersion = namedtuple('TesseractLeptonica', 'tesseract,leptonica')
 
@@ -47,13 +48,18 @@ def download_and_ocr(uri, lang='eng'):
         )
 
     extension = uri.split('.')[-1]
-    pages = []
-    if extension == 'pdf':
-        raise NotImplementedError(f'PDF OCR handling has not been implemented')
-    else:
-        ocr_content = None
-        with download_file(uri) as file_handle:
-            image = Image.open(file_handle)
-            ocr_content = pytesseract.image_to_string(image, lang=lang)
-        pages.append(ocr_content.replace('\f', ''))
-    return pages
+    ocr_pages = []
+    images = []
+    with download_file(uri) as file_handle:
+        if extension == 'pdf':
+            images = convert_to_ppm(file_handle)
+        else:
+            images.append(Image.open(file_handle))
+
+    for index, image in enumerate(images, 1):
+        print(f'Running OCR on page {index}')
+        ocr_content = pytesseract.image_to_string(image, lang=lang)
+        ocr_pages.append(ocr_content.replace('\f', ''))
+        image.close()
+
+    return ocr_pages

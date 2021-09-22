@@ -16,4 +16,5 @@ def download_file(uri: str) -> BytesIO:
         r.raise_for_status()
         for chunk in r.iter_content(chunk_size=8192):
             file_bytes.write(chunk)
+    file_bytes.seek(0)
     return file_bytes
